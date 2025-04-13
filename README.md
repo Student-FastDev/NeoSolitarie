@@ -151,6 +151,7 @@ The goal of Solitaire is to move all cards to the four foundation piles, organiz
 4. [Kluczowe funkcje](#kluczowe-funkcje)
 
 ---
+<img src="https://i.imgur.com/ynuNJ0i.png" width="50">
 
 ## Opis projektu
 
@@ -163,6 +164,7 @@ NeoSolitaire to bogata w funkcje konsolowa implementacja klasycznej gry karciane
 - **Opcje dostosowywania**: Funkcje dostępności, takie jak tryb dla daltonistów i ustawienia trudności
 
 ---
+<img src="https://i.imgur.com/MBhACeb.png" width="50">
 
 ## Konfiguracja i kompilacja
 
@@ -199,6 +201,7 @@ Aby uruchomić ten program, potrzebujesz środowiska programistycznego C++. Gra 
    ```
 
 ---
+<img src="https://i.imgur.com/Rh4y2GJ.png" width="50">
 
 ## Instrukcje do gry
 
@@ -243,6 +246,7 @@ Celem Pasjansa jest przeniesienie wszystkich kart na cztery stosy fundamentów, 
 - **Podpowiedź**: Uzyskaj sugestie dotyczące następnego ruchu.
 
 ---
+<img src="https://i.imgur.com/H3NP7i4.png" width="50">
 
 ## Kluczowe funkcje
 

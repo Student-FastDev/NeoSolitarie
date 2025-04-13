@@ -262,3 +262,4 @@ Celem Pasjansa jest przeniesienie wszystkich kart na cztery stosy fundamentów, 
    - Funkcjonalność cofania do poprawiania błędów
 
 ---
+<img src="https://i.imgur.com/JJwDYbq.gif" width="530">

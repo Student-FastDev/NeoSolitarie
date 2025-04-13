@@ -136,7 +136,7 @@ The goal of Solitaire is to move all cards to the four foundation piles, organiz
 
 ---
 
-# Gra NeoSolitaire (Polski)
+# (Polski)
 
 ## Spis treści
 1. [Opis projektu](#opis-projektu)

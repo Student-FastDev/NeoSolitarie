@@ -68,6 +68,7 @@ To run this program, you need a C++ development environment. The game is designe
    ```
 
 ---
+<img src="https://i.imgur.com/Rh4y2GJ.png" width="50">
 
 ## Game Instructions
 

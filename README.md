@@ -138,6 +138,7 @@ The goal of Solitaire is to move all cards to the four foundation piles, organiz
    - Hint system to suggest valid moves.
    - Undo functionality to correct mistakes.
 
+<img src="https://i.imgur.com/AoS2i3y.png" width="500">
 ---
 
 # Polski

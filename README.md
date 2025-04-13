@@ -6,7 +6,7 @@ This README was written in two languages:
 
 ![NeoSolitaire Menu](https://i.imgur.com/zZusAt9.png)
 
-<img src="https://i.imgur.com/e0d5icw.gif" width="300">
+<img src="https://i.imgur.com/e0d5icw.gif" width="500">
 
 # (English)
 

@@ -18,7 +18,7 @@ This README was written in two languages:
 4. [Key Features](#key-features)
 
 ---
-![NeoSolitaire Icon](https://i.imgur.com/ynuNJ0i.png)
+<img src="https://i.imgur.com/ynuNJ0i.png" width="50">
 ## Project Overview
 
 NeoSolitaire is a feature-rich console-based implementation of the classic Solitaire (Klondike) card game. The game presents a polished, animated interface with smooth card movements and visual effects. It features:

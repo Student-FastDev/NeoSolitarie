@@ -4,7 +4,7 @@ This README was written in two languages:
 - **English** [NeoSolitaire Game](#neosolitaire-game-english)
 -  **Polski** [Gra NeoSolitaire](#gra-neosolitaire-polski)
 
-![NeoSolitaire Menu]([https://i.imgur.com/e0d5icw.gif](https://i.imgur.com/zZusAt9.png))
+![NeoSolitaire Menu](https://i.imgur.com/zZusAt9.png)
 
 # NeoSolitaire Game (English)
 

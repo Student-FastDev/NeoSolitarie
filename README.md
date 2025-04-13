@@ -1,12 +1,12 @@
 ![NeoSolitaire Icon](https://i.imgur.com/1mSIKP4.png)
 
 This README was written in two languages:
-- **English** [NeoSolitaire Game](#neosolitaire-game-english)
+- **English** [NeoSolitaire Game](#english)
 -  **Polski** [Gra NeoSolitaire](#gra-neosolitaire-polski)
 
 ![NeoSolitaire Menu](https://i.imgur.com/zZusAt9.png)
 
-# NeoSolitaire Game (English)
+# (English)
 
 ## Table of Contents
 1. [Project Overview](#project-overview)

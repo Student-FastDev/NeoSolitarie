@@ -31,6 +31,7 @@ NeoSolitaire is a feature-rich console-based implementation of the classic Solit
 - **Customization Options**: Accessibility features like colorblind mode and difficulty settings.
 
 ---
+<img src="https://i.imgur.com/MBhACeb.png" width="50">
 
 ## Setup and Compilation
 

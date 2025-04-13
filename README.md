@@ -113,6 +113,7 @@ The goal of Solitaire is to move all cards to the four foundation piles, organiz
 - **Hint**: Get suggestions for your next move.
 
 ---
+<img src="https://i.imgur.com/H3NP7i4.png" width="50">
 
 ## Key Features
 

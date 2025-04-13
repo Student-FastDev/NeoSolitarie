@@ -9,7 +9,7 @@ This README was written in two languages:
 
 <img src="https://i.imgur.com/e0d5icw.gif" width="530">
 
-# (English)
+# English
 
 ## Table of Contents
 1. [Project Overview](#project-overview)
@@ -136,7 +136,7 @@ The goal of Solitaire is to move all cards to the four foundation piles, organiz
 
 ---
 
-# (Polski)
+# Polski
 
 ## Spis treści
 1. [Opis projektu](#opis-projektu)

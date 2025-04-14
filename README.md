@@ -1,15 +1,15 @@
 ![NeoSolitaire Icon](https://i.imgur.com/1mSIKP4.png)
 
 This README was written in two languages:
-- **English** [NeoSolitaire Game](#english)
--  **Polski** [Gra NeoSolitaire](#polski)
+- **English** [NeoSolitaire Game](#neosolitaire-english)
+-  **Polski** [Gra NeoSolitaire](##neopasjans-polski)
 
 ---
 ![NeoSolitaire Menu](https://i.imgur.com/zZusAt9.png)
 
 <img src="https://i.imgur.com/e0d5icw.gif" width="530">
 
-# English
+# NeoSolitaire (English)
 
 ## Table of Contents
 1. [Project Overview](#project-overview)
@@ -142,7 +142,7 @@ The goal of Solitaire is to move all cards to the four foundation piles, organiz
 
 <img src="https://i.imgur.com/AWoRB6y.png" width="500">
 
-# Polski
+# NeoPasjans (Polski)
 
 ## Spis treści
 1. [Opis projektu](#opis-projektu)

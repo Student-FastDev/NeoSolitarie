@@ -273,3 +273,8 @@ Celem Pasjansa jest przeniesienie wszystkich kart na cztery stosy fundamentów, 
 
 ---
 <img src="https://i.imgur.com/JJwDYbq.gif" width="530">
+
+`Animation at game start.`
+`Animacja wyświetlana podczas startu gry. `
+
+---

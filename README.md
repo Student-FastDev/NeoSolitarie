@@ -1,8 +1,8 @@
 ![NeoSolitaire Icon](https://i.imgur.com/1mSIKP4.png)
 
 This README was written in two languages:
-- **English** [NeoSolitaire Game](#neosolitaire-english)
--  **Polski** [Gra NeoSolitaire](#neopasjans-polski)
+- **English** [NeoSolitaire](#neosolitaire-english)
+-  **Polski** [NeoPasjans](#neopasjans-polski)
 
 ---
 ![NeoSolitaire Menu](https://i.imgur.com/zZusAt9.png)

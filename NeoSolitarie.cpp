@@ -379,11 +379,11 @@ public:
         return !isJoker && (suit == 'H' || suit == 'D');
     }
 
-    WORD getColor(bool colorblindMode) const {
+    WORD getColor() const {
         if(isJoker) return NEO_FOREGROUND_MAGENTA | NEO_FOREGROUND_INTENSITY;
         if (!faceUp) return COLOR_CARD_BACK;
         if (isRed()) {
-            return colorblindMode ? COLOR_CARD_BLACK : COLOR_CARD_RED;
+            return COLOR_CARD_RED;
         } else {
             return COLOR_CARD_BLACK;
         }
@@ -401,7 +401,6 @@ private:
     int revealsLeft;
     int jokerCardsLeft;
     int hintsLeft; 
-    bool colorblindMode;
     bool easyMode; 
     bool powerupsEnabled;
     bool firstTimePlayer; 
@@ -412,7 +411,7 @@ private:
 public:
     Player(const std::string& n = "Player")
         : name(n), score(0), highScore(0),
-          colorblindMode(false), easyMode(false), powerupsEnabled(true),
+          easyMode(false), powerupsEnabled(true),
           firstTimePlayer(true), 
           timerRunning(false), gameDuration(std::chrono::duration<double>::zero())
     {
@@ -424,11 +423,24 @@ public:
     std::string getName() const { return name; }
 
     int getScore() const { return score; }
-    void addScore(int points) { score = std::max(0, score + points); }
-    void resetScore() { score = 0; }
+    void addScore(int points) { 
+        score = std::max(0, score + points); 
+        if (score > highScore) {
+            highScore = score;
+            saveToFile();
+        }
+    }
+    void resetScore() { 
+        score = 0; 
+    }
 
     int getHighScore() const { return highScore; }
-    void updateHighScore() { if (score > highScore) highScore = score; }
+    void updateHighScore() { 
+        if (score > highScore) {
+            highScore = score; 
+            saveToFile();
+        }
+    }
 
     int getUndosLeft() const { return undosLeft; }
     bool useUndo() {
@@ -499,9 +511,6 @@ public:
     void setHintsLeft(int count) { hintsLeft = std::max(0, count); }
 
 
-    bool getColorblindMode() const { return colorblindMode; }
-    void toggleColorblindMode() { colorblindMode = !colorblindMode; }
-
     bool getEasyMode() const { return easyMode; }
     void toggleEasyMode() {
         easyMode = !easyMode;
@@ -556,7 +565,6 @@ public:
         
         file << name << "\n";
         file << highScore << "\n";
-        file << (colorblindMode ? "1" : "0") << "\n";
         file << (easyMode ? "1" : "0") << "\n";
         file << (powerupsEnabled ? "1" : "0") << "\n";
         file << (firstTimePlayer ? "1" : "0") << "\n"; 
@@ -584,10 +592,6 @@ public:
             } catch (...) {
                 highScore = 0;
             }
-        }
-
-        if (std::getline(file, line)) {
-            colorblindMode = (line == "1");
         }
 
         if (std::getline(file, line)) {
@@ -628,6 +632,11 @@ public:
 
     bool isFirstTimePlayer() const { return firstTimePlayer; }
     void setFirstTimePlayer(bool isFirst) { firstTimePlayer = isFirst; }
+
+    void resetHighScore() {
+        highScore = 0;
+        saveToFile();
+    }
 };
 
 struct GameState {
@@ -1579,13 +1588,13 @@ private:
 
         WORD borderAttribute = COLOR_BORDER;
         WORD backgroundAttribute = COLOR_DEFAULT; 
-        WORD cardAttribute = card.getColor(player.getColorblindMode()); 
+        WORD cardAttribute = card.getColor(); 
 
         if (hintHighlight) {
             borderAttribute = COLOR_HINT_HIGHLIGHT;
             backgroundAttribute = COLOR_HINT_HIGHLIGHT;
 
-             if (card.isRed() && !player.getColorblindMode())
+             if (card.isRed())
                 cardAttribute = COLOR_CARD_RED | (COLOR_HINT_HIGHLIGHT & 0xFFF0); 
              else
                 cardAttribute = COLOR_CARD_BLACK | (COLOR_HINT_HIGHLIGHT & 0xFFF0);
@@ -1598,7 +1607,7 @@ private:
              borderAttribute = COLOR_HIGHLIGHTS;
              backgroundAttribute = COLOR_HIGHLIGHTS;
 
-             if (card.isRed() && !player.getColorblindMode())
+             if (card.isRed())
                 cardAttribute = COLOR_CARD_RED | NEO_BACKGROUND_YELLOW;
              else
                 cardAttribute = COLOR_CARD_BLACK | NEO_BACKGROUND_YELLOW;
@@ -1662,16 +1671,14 @@ private:
         int pileIndex = -1; 
         for (int i = 0; i < 7; ++i) if (x == TABLEAU_POS[i].X) pileIndex = i;
 
-
         bool isBaseSelected = currentSelection.type == SelectableType::TABLEAU_PILE && currentSelection.index == pileIndex;
          bool isHintDestinationBase = hint && hint->destination.type == SelectableType::TABLEAU_PILE && hint->destination.index == pileIndex;
 
-
         if (pile.empty()) {
             drawEmptyPile(x, y, isBaseSelected, L"[ ]", isHintDestinationBase);
+            ConsoleUtils::fillRectangle(x, y + CARD_HEIGHT, CARD_WIDTH, CONSOLE_HEIGHT - y - CARD_HEIGHT - 2, L' ');
             return;
         }
-
 
         int currentY = y;
         for (size_t i = 0; i < pile.size(); ++i) {
@@ -1876,13 +1883,6 @@ private:
         for (int i = 0; i < 7; ++i) {
             ConsoleUtils::writeString(TABLEAU_POS[i].X + CARD_WIDTH / 2, TABLEAU_POS[i].Y - 1, std::to_string(i + 1), COLOR_LABEL);
         }
-
-        if (player.getColorblindMode()) {
-             std::wstring suitsString = L" H D C S"; 
-             for (int i = 0; i < 4; ++i) {
-                 ConsoleUtils::writeStringWide(FOUNDATION_POS[i].X + CARD_WIDTH / 2 -1 , FOUNDATION_POS[i].Y - 1, suitsString.substr(i*2+1, 1), COLOR_LABEL);
-             }
-        }
     }
 
     void drawStock(const std::optional<Hint>& hint) {
@@ -1912,11 +1912,11 @@ private:
 
         if (game.getWaste().empty()) {
             drawEmptyPile(WASTE_POS.X, WASTE_POS.Y, isSelected, L"[ ]", isHintDest);
+            ConsoleUtils::fillRectangle(WASTE_POS.X - 1, WASTE_POS.Y + 1, 1, 1, L' ');
         } else {
             drawCard(WASTE_POS.X, WASTE_POS.Y, game.getWaste().back(), isSelected, isHintSource || isHintDest);
 
              if (game.getWaste().size() > 1) {
-
                 ConsoleUtils::setChar(WASTE_POS.X - 1, WASTE_POS.Y + 1, L'<', COLOR_BORDER); 
              }
         }
@@ -1928,23 +1928,31 @@ private:
              bool isHintSource = hint && hint->source.type == SelectableType::FOUNDATION && hint->source.index == i;
              bool isHintDest = hint && hint->destination.type == SelectableType::FOUNDATION && hint->destination.index == i;
 
-
             if (game.getFoundations()[i].empty()) {
-
                 std::wstring suitSymbol;
                 WORD color = COLOR_CARD_EMPTY;
                  switch(i) { 
-                     case 0: suitSymbol = L"♥"; color = player.getColorblindMode() ? COLOR_CARD_EMPTY : COLOR_CARD_RED; break;
-                     case 1: suitSymbol = L"♦"; color = player.getColorblindMode() ? COLOR_CARD_EMPTY : COLOR_CARD_RED; break;
-                     case 2: suitSymbol = L"♣"; color = COLOR_CARD_BLACK; break;
-                     case 3: suitSymbol = L"♠"; color = COLOR_CARD_BLACK; break;
+                     case 0: 
+                         suitSymbol = L"♥"; 
+                         color = COLOR_CARD_RED; 
+                         break;
+                     case 1: 
+                         suitSymbol = L"♦"; 
+                         color = COLOR_CARD_RED; 
+                         break;
+                     case 2: 
+                         suitSymbol = L"♣"; 
+                         color = COLOR_CARD_BLACK; 
+                         break;
+                     case 3: 
+                         suitSymbol = L"♠"; 
+                         color = COLOR_CARD_BLACK; 
+                         break;
                  }
                 drawEmptyPile(FOUNDATION_POS[i].X, FOUNDATION_POS[i].Y, isSelected, L" " + suitSymbol, isHintDest);
 
                  ConsoleUtils::setChar(FOUNDATION_POS[i].X + 1, FOUNDATION_POS[i].Y + 1, suitSymbol[0],
                                        isSelected ? COLOR_HIGHLIGHTS : (isHintDest ? COLOR_HINT_HIGHLIGHT : color));
-
-
             } else {
                 drawCard(FOUNDATION_POS[i].X, FOUNDATION_POS[i].Y, game.getFoundations()[i].back(), isSelected, isHintSource || isHintDest);
             }
@@ -1965,33 +1973,33 @@ private:
 
         ConsoleUtils::fillRectangle(SCORE_POS.X, SCORE_POS.Y, CONSOLE_WIDTH - SCORE_POS.X -1, 15, L' ');
 
-        ConsoleUtils::writeString(SCORE_POS.X, currentY, "Score      : ", COLOR_LABEL);
+        ConsoleUtils::writeString(SCORE_POS.X, currentY, "Score        ", COLOR_LABEL);
         ConsoleUtils::writeString(valueX, currentY++, std::to_string(player.getScore()), COLOR_VALUE);
 
-        ConsoleUtils::writeString(SCORE_POS.X, currentY, "Time       : ", COLOR_LABEL);
+        ConsoleUtils::writeString(SCORE_POS.X, currentY, "Time         ", COLOR_LABEL);
         ConsoleUtils::writeString(valueX, currentY++, player.getFormattedTime(), COLOR_VALUE);
 
-        ConsoleUtils::writeString(SCORE_POS.X, currentY, "Moves      : ", COLOR_LABEL);
+        ConsoleUtils::writeString(SCORE_POS.X, currentY, "Moves        ", COLOR_LABEL);
         ConsoleUtils::writeString(valueX, currentY++, std::to_string(game.getMovesMade()), COLOR_VALUE);
 
-        ConsoleUtils::writeString(SCORE_POS.X, currentY, "High Score : ", COLOR_LABEL);
+        ConsoleUtils::writeString(SCORE_POS.X, currentY, "High Score   ", COLOR_LABEL);
         ConsoleUtils::writeString(valueX, currentY++, std::to_string(player.getHighScore()), COLOR_VALUE);
 
         currentY++; 
 
-        ConsoleUtils::writeString(POWERUP_POS.X, currentY, "[U]ndo : ", COLOR_LABEL);
+        ConsoleUtils::writeString(POWERUP_POS.X, currentY, "[U]ndo   ", COLOR_LABEL);
         ConsoleUtils::writeString(POWERUP_POS.X + 9, currentY++, std::to_string(player.getUndosLeft()), player.getUndosLeft() > 0 ? COLOR_VALUE : COLOR_ERROR);
 
-        ConsoleUtils::writeString(POWERUP_POS.X, currentY, "[S]hfl : ", COLOR_LABEL);
+        ConsoleUtils::writeString(POWERUP_POS.X, currentY, "[S]hfl   ", COLOR_LABEL);
         ConsoleUtils::writeString(POWERUP_POS.X + 9, currentY++, std::to_string(player.getShufflesLeft()), player.getShufflesLeft() > 0 ? COLOR_VALUE : COLOR_ERROR);
 
-        ConsoleUtils::writeString(POWERUP_POS.X, currentY, "[V]eal : ", COLOR_LABEL);
+        ConsoleUtils::writeString(POWERUP_POS.X, currentY, "[V]eal   ", COLOR_LABEL);
         ConsoleUtils::writeString(POWERUP_POS.X + 9, currentY++, std::to_string(player.getRevealsLeft()), player.getRevealsLeft() > 0 ? COLOR_VALUE : COLOR_ERROR);
 
-        ConsoleUtils::writeString(POWERUP_POS.X, currentY, "[J]oker: ", COLOR_LABEL);
+        ConsoleUtils::writeString(POWERUP_POS.X, currentY, "[J]oker  ", COLOR_LABEL);
         ConsoleUtils::writeString(POWERUP_POS.X + 9, currentY++, std::to_string(player.getJokerCardsLeft()), player.getJokerCardsLeft() > 0 ? COLOR_VALUE : COLOR_ERROR);
 
-        ConsoleUtils::writeString(POWERUP_POS.X, currentY, "[H]int : ", COLOR_LABEL); 
+        ConsoleUtils::writeString(POWERUP_POS.X, currentY, "[H]int   ", COLOR_LABEL); 
         ConsoleUtils::writeString(POWERUP_POS.X + 9, currentY++, std::to_string(player.getHintsLeft()), player.getHintsLeft() > 0 ? COLOR_VALUE : COLOR_ERROR);
     }
 
@@ -2049,16 +2057,12 @@ public:
         ConsoleUtils::sleep(DEAL_ANIMATION_DELAY_MS * 3);
 
         for (int pileIdx = 0; pileIdx < 7; ++pileIdx) {
+            int currentY = TABLEAU_POS[pileIdx].Y;
+            
             for (int cardIdx = 0; cardIdx <= pileIdx; ++cardIdx) {
-
-                int offsetY = 0;
-                for (int i = 0; i < cardIdx; ++i) {
-                    offsetY += (i == cardIdx - 1 ? 2 : 1);
-                }
-                
                 COORD destCoord = {
                     TABLEAU_POS[pileIdx].X,
-                    static_cast<SHORT>(TABLEAU_POS[pileIdx].Y + offsetY)
+                    static_cast<SHORT>(currentY)
                 };
 
                 const Card& actualCard = game.getTableau()[pileIdx][cardIdx];
@@ -2104,7 +2108,6 @@ public:
                     drawCard(currentPos.X, currentPos.Y, animCard, false);
 
                     if (cardIdx == pileIdx) {
-
                         int sparkleRadius = static_cast<int>(3 * (1.0f - progress));
                         for (int s = 0; s < 4; s++) {
                             int sx = currentPos.X + CARD_WIDTH/2 + std::cos(progress * 6.28f + s * 1.57f) * sparkleRadius;
@@ -2124,6 +2127,14 @@ public:
                 ConsoleUtils::renderBuffer();
                 
                 ConsoleUtils::sleep(DEAL_ANIMATION_DELAY_MS);
+                
+                if (cardIdx < pileIdx) {
+                    if (animCard.isFaceUp()) {
+                        currentY += 2;
+                    } else {
+                        currentY += 1;
+                    }
+                }
             }
         }
 
@@ -2281,11 +2292,11 @@ public:
                 currentAttribute = statusBarBackground | COLOR_INFO;
             }
         } else if (sourceSelection.isValid()) {
-            modeText = L"SELECT DESTINATION (Arrows/kj, Enter/Space to select | Esc to cancel)"; 
+            modeText = L"SELECT DESTINATION (Arrows, Enter/Space to select | Esc to cancel)"; 
             currentAttribute = statusBarBackground | COLOR_INFO;
         } else {
 
-            modeText = L"SELECT SOURCE (Arrows/kj, Enter/Space) | D: Draw | U: Undo | H: Hint | S: Shfl | V: Real | J: Jokr | O: Opts | Q: Quit"; 
+            modeText = L"SELECT SOURCE (Arrows, Enter/Space) | D: Draw | U: Undo | H: Hint | S: Shfl | V: Real | J: Jokr | O: Opts | Q: Quit"; 
             currentAttribute = COLOR_STATUS_BAR;
         }
 
@@ -2319,8 +2330,10 @@ public:
     }
 
     void updateBoard() {
-
+        ConsoleUtils::clearBuffer();
+        drawBoardStaticElements();
         drawBoardContent(std::nullopt);
+        ConsoleUtils::renderBuffer();
     }
 
     void flashHint(const Hint& hint) {
@@ -2739,6 +2752,8 @@ private:
                  requiresRedraw = true;
                  break;
             case 'q': case 'Q': 
+                 game.getPlayer().updateHighScore();
+                 game.getPlayer().saveToFile();
                  showMainMenu(); 
                  return; 
             case KEY_ESC: 
@@ -2751,10 +2766,7 @@ private:
                     ui.clearSelections(); 
                 }
                 break;
-
-
             default:
-
                 requiresRedraw = false; 
                 break;
         }
@@ -2891,7 +2903,7 @@ private:
 
             if (moveMade) {
                  ui.setStatusMessage(L"Move successful!", 1000); 
-
+                 game.getPlayer().updateHighScore();
             } else {
 
                  if (source != destination && destination.type != SelectableType::STOCK) {
@@ -2981,7 +2993,7 @@ private:
     }
 
     void showMainMenu() {
-        const std::vector<std::string> options = {"New Game", "Tutorial", "Options", "How to Play", "Exit"};
+        const std::vector<std::string> options = {"New Game   ", "Tutorial", "Options", "Exit"};
         int choice = -1;
         bool needsRedraw = true; 
 
@@ -3014,11 +3026,8 @@ private:
                     choice = -1; 
                     break;
                 case 3: 
-                    showHelpScreen();
-                    needsRedraw = true; 
-                    choice = -1; 
-                    break;
-                case 4: 
+                    game.getPlayer().updateHighScore();
+                    game.getPlayer().saveToFile();
                     running = false; 
                     break;
                 default: 
@@ -3047,18 +3056,65 @@ private:
         
         int currentLesson = 0;
         bool tutorialActive = true;
+        int animationFrame = 0;
         
         std::vector<std::wstring> lessons = {
-            L"Welcome to the Solitaire Tutorial! In this tutorial, you'll learn how to play step by step.",
-            L"OBJECTIVE: Move all cards to the 4 Foundations (top right) sorted by suit from Ace to King.",
-            L"TABLEAU: Cards in the middle area are built DOWN in alternating colors (red on black, black on red).",
-            L"STOCK & WASTE: When stuck, draw cards from the Stock (top left) by pressing D or clicking it.",
-            L"FOUNDATIONS: Built UP by suit from Ace to King. Cards can be moved here by selecting them and pressing Enter.",
-            L"MOVING CARDS: Select a card with Enter/Space, then select destination and press Enter/Space again.",
-            L"POWER-UPS: Use special abilities like Undo (U), Shuffle (S), Reveal (V), Joker (J) and Hint (H).",
-            L"BASIC STRATEGY: Try to reveal face-down cards and create empty spots for Kings.",
-            L"TIP: Auto-move to foundations by clicking/selecting a valid card once (no destination needed).",
-            L"Now you're ready to play! Start a new game from the main menu, and have fun!"
+            L"Welcome to the Solitaire Tutorial! Interact with the examples below to learn how to play.",
+            L"OBJECTIVE: Move all cards to the 4 Foundation piles (♥♦♣♠) in ascending order (A→K) by suit.",
+            L"TABLEAU: Build columns in descending order (K→A) with alternating colors (red on black, black on red).",
+            L"STOCK & WASTE: Draw cards from Stock (left pile) to Waste (middle pile) when you need more options.",
+            L"FOUNDATIONS: Build upward by suit from Ace to King. Only cards of matching suit can be placed here.",
+            L"CARD MOVEMENT: Select a card or sequence with Enter/Space, then select a valid destination.",
+            L"SPECIAL MOVES: Empty tableau spots can only be filled with Kings or King sequences.",
+            L"POWER-UPS: Special abilities to help when stuck. Each has limited uses per game.",
+            L"WINNING STRATEGY: Focus on uncovering face-down cards and creating empty tableau spots for Kings.",
+            L"SCORING: Earn points for each move to foundation. Try to win with the highest score possible!",
+            L"You're ready to play! Remember to have fun and use power-ups when needed."
+        };
+        
+        auto drawFullCard = [](int x, int y, char suit, int value, bool faceUp, bool highlighted = false) {
+            Card card(suit, value);
+            card.setFaceUp(faceUp);
+            ConsoleUtils::drawBox(x, y, 6, 4, highlighted ? COLOR_HIGHLIGHTS : COLOR_BORDER);
+            
+            if (faceUp) {
+                std::wstring valueStr;
+                switch (value) {
+                    case 1: valueStr = L"A"; break;
+                    case 11: valueStr = L"J"; break;
+                    case 12: valueStr = L"Q"; break;
+                    case 13: valueStr = L"K"; break;
+                    default: valueStr = std::to_wstring(value); break;
+                }
+                
+                std::wstring suitStr;
+                WORD color;
+                switch (suit) {
+                    case 'H': suitStr = L"♥"; color = COLOR_CARD_RED; break;
+                    case 'D': suitStr = L"♦"; color = COLOR_CARD_RED; break;
+                    case 'C': suitStr = L"♣"; color = COLOR_CARD_BLACK; break;
+                    case 'S': suitStr = L"♠"; color = COLOR_CARD_BLACK; break;
+                    default: suitStr = L"?"; color = COLOR_DEFAULT; break;
+                }
+                
+                int xOffset = (valueStr.length() == 1) ? 2 : 1;
+                ConsoleUtils::writeStringWide(x + xOffset, y + 1, valueStr + suitStr, highlighted ? COLOR_HIGHLIGHTS : color);
+            } else {
+                ConsoleUtils::fillRectangle(x + 1, y + 1, 4, 2, L'░', COLOR_CARD_BACK);
+            }
+        };
+        
+        auto drawAnimatedArrow = [&animationFrame](int x, int y, bool horizontal, int length, WORD color = COLOR_INFO) {
+            std::wstring arrowChars = horizontal ? L"→" : L"↓";
+            int pos = animationFrame % length;
+            
+            for (int i = 0; i < length; i++) {
+                if (i == pos) {
+                    ConsoleUtils::writeStringWide(x + (horizontal ? i : 0), y + (horizontal ? 0 : i), arrowChars, color | NEO_FOREGROUND_INTENSITY);
+                } else {
+                    ConsoleUtils::writeStringWide(x + (horizontal ? i : 0), y + (horizontal ? 0 : i), L" ", COLOR_DEFAULT);
+                }
+            }
         };
         
         auto renderTutorialPage = [&](int page) {
@@ -3068,183 +3124,405 @@ private:
 
             std::string pageInfo = "Lesson " + std::to_string(page + 1) + " of " + std::to_string(lessons.size());
             ConsoleUtils::writeString((CONSOLE_WIDTH - pageInfo.length()) / 2, 3, pageInfo, COLOR_LABEL);
+            
+            std::wstring interactPrompt = L"";
+            if (page == 2 || page == 5) {
+                interactPrompt = L"Press Enter to see a demonstration.";
+            } else if (page == 7) {
+                interactPrompt = L"Press P, U, S, V, J, or H to learn about each power-up.";
+            }
+            
+            if (!interactPrompt.empty()) {
+                ConsoleUtils::writeStringWide((CONSOLE_WIDTH - interactPrompt.length()) / 2, CONSOLE_HEIGHT - 4, interactPrompt, COLOR_SUCCESS);
+            }
 
             switch (page) {
                 case 0: {
-
                     ConsoleUtils::drawBox(15, 8, 50, 10, COLOR_BORDER);
-                    ConsoleUtils::writeStringWide(20, 10, L"♠ ♥ Welcome to Solitaire! ♦ ♣", COLOR_SUCCESS);
-                    ConsoleUtils::writeStringWide(20, 12, L"Let's learn how to play step by step.", COLOR_DEFAULT);
-                    ConsoleUtils::writeStringWide(20, 14, L"Use ← → keys to navigate the tutorial", COLOR_INFO);
+                    
+                    std::vector<std::pair<char, WORD>> suits = {
+                        {'H', COLOR_CARD_RED}, {'D', COLOR_CARD_RED},
+                        {'C', COLOR_CARD_BLACK}, {'S', COLOR_CARD_BLACK}
+                    };
+                    
+                    for (int i = 0; i < 4; i++) {
+                        char suit = "HDCS"[i];
+                        int x = 20 + i * 10;
+                        drawFullCard(x, 9, suit, (animationFrame / 4) % 13 + 1, true);
+                    }
+                    
+                    ConsoleUtils::writeStringWide(20, 14, L"Learn to play Solitaire step by step!", COLOR_SUCCESS);
                     break;
                 }
                 case 1: {
-
-                    for (int i = 0; i < 4; i++) {
-                        ConsoleUtils::drawBox(20 + i*15, 8, 6, 4, COLOR_BORDER);
-                        switch (i) {
-                            case 0: ConsoleUtils::writeStringWide(22 + i*15, 9, L"A♠", COLOR_CARD_BLACK); break;
-                            case 1: ConsoleUtils::writeStringWide(22 + i*15, 9, L"A♥", COLOR_CARD_RED); break;
-                            case 2: ConsoleUtils::writeStringWide(22 + i*15, 9, L"A♣", COLOR_CARD_BLACK); break;
-                            case 3: ConsoleUtils::writeStringWide(22 + i*15, 9, L"A♦", COLOR_CARD_RED); break;
+                    ConsoleUtils::writeString(20, 6, "OBJECTIVE: Build four ordered foundation piles.", COLOR_TITLE);
+                    
+                    int startX = 20;
+                    for (int suit = 0; suit < 4; suit++) {
+                        char suitChar = "HDCS"[suit];
+                        std::wstring suitSymbol;
+                        suitSymbol = L"♥♦♣♠"[suit];
+                        WORD color = (suit < 2) ? COLOR_CARD_RED : COLOR_CARD_BLACK;
+                        
+                        ConsoleUtils::drawBox(startX + suit*15, 8, 6, 4, COLOR_BORDER);
+                        ConsoleUtils::writeStringWide(startX + suit*15 + 2, 9, suitSymbol, color);
+                        
+                        int topCard = (animationFrame / 10) % 14;
+                        for (int i = 1; i <= std::min(13, topCard); i++) {
+                            int offset = i * 1;
+                            drawFullCard(startX + suit*15, 8 - offset, suitChar, i, true);
                         }
-                        ConsoleUtils::writeString(20 + i*15, 13, "↑ Up to K", COLOR_INFO);
                     }
+                    
+                    ConsoleUtils::writeString(20, 14, "Each foundation begins with Ace (A).", COLOR_INFO);
+                    ConsoleUtils::writeString(20, 15, "and builds up to King (K) by suit.", COLOR_INFO);
+                    ConsoleUtils::writeString(20, 17, "Game is won when all four piles are complete.", COLOR_SUCCESS);
                     break;
                 }
                 case 2: {
-
-                    int x = 20;
-                    ConsoleUtils::drawBox(x, 8, 6, 4, COLOR_BORDER);
-                    ConsoleUtils::writeStringWide(x+2, 9, L"5♠", COLOR_CARD_BLACK);
+                    ConsoleUtils::writeString(15, 6, "TABLEAU RULES: Cards build DOWN with ALTERNATING COLORS.", COLOR_TITLE);
                     
-                    ConsoleUtils::drawBox(x, 11, 6, 4, COLOR_BORDER);
-                    ConsoleUtils::writeStringWide(x+2, 12, L"4♥", COLOR_CARD_RED);
+                    int x = 15;
+                    drawFullCard(x, 8, 'S', 5, true);
+                    drawFullCard(x, 12, 'H', 4, true);
+                    drawFullCard(x, 16, 'S', 3, true);
                     
-                    ConsoleUtils::drawBox(x, 14, 6, 4, COLOR_BORDER);
-                    ConsoleUtils::writeStringWide(x+2, 15, L"3♠", COLOR_CARD_BLACK);
+                    ConsoleUtils::writeStringWide(x+7, 10, L"↓ Black to Red.", COLOR_INFO);
+                    ConsoleUtils::writeStringWide(x+7, 14, L"↓ Red to Black.", COLOR_INFO);
                     
-                    ConsoleUtils::writeString(x+10, 11, "← Build DOWN in", COLOR_INFO);
-                    ConsoleUtils::writeString(x+10, 12, "  alternating colors", COLOR_INFO);
+                    x = 45;
+                    drawFullCard(x, 8, 'D', 10, true);
+                    drawFullCard(x, 12, 'C', 9, true);
+                    drawFullCard(x, 16, 'H', 8, true);
+                    
+                    ConsoleUtils::writeStringWide(x+7, 10, L"↓ Red to Black.", COLOR_INFO);
+                    ConsoleUtils::writeStringWide(x+7, 14, L"↓ Black to Red.", COLOR_INFO);
+                    
                     break;
                 }
-
                 case 3: {
-
-                    ConsoleUtils::drawBox(20, 8, 6, 4, COLOR_BORDER);
-                    ConsoleUtils::writeString(22, 9, "[ ]", COLOR_CARD_BACK);
-                    ConsoleUtils::writeString(19, 12, "STOCK", COLOR_LABEL);
+                    ConsoleUtils::writeString(20, 6, "STOCK & WASTE: Drawing new cards.", COLOR_TITLE);
                     
-                    ConsoleUtils::drawBox(30, 8, 6, 4, COLOR_BORDER);
-                    ConsoleUtils::writeStringWide(32, 9, L"7♥", COLOR_CARD_RED);
-                    ConsoleUtils::writeString(29, 12, "WASTE", COLOR_LABEL);
+                    int stockX = 20, wasteX = 40;
                     
-                    ConsoleUtils::writeString(40, 10, "Press D to", COLOR_INFO);
-                    ConsoleUtils::writeString(40, 11, "draw cards", COLOR_INFO);
+                    for (int i = 0; i < 3; i++) {
+                        ConsoleUtils::drawBox(stockX - i/2, 8 - i/2, 6, 4, COLOR_BORDER);
+                    }
+                    ConsoleUtils::fillRectangle(stockX + 1, 8 + 1, 4, 2, L'░', COLOR_CARD_BACK);
+                    ConsoleUtils::writeString(stockX + 1, 13, "STOCK", COLOR_LABEL);
+                    
+                    int movePhase = animationFrame % 30;
+                    if (movePhase < 15) {
+                        int cardX = stockX + (wasteX - stockX) * movePhase / 15;
+                        drawFullCard(cardX, 8, 'H', 7, movePhase > 7);
+                    } else {
+                        drawFullCard(wasteX, 8, 'H', 7, true);
+                    }
+                    
+                    ConsoleUtils::writeString(wasteX + 1, 13, "WASTE", COLOR_LABEL);
+                    
+                    ConsoleUtils::writeString(20, 17, "Press [D] to draw card from Stock to Waste.", COLOR_INFO);
+                    ConsoleUtils::writeString(20, 19, "When Stock is empty, you can use [S] to shuffle (limited uses).", COLOR_INFO);
+                    break;
+                }
+                case 4: {
+                    ConsoleUtils::writeString(15, 6, "FOUNDATION BUILDING: Same suit, ascending order (A→K).", COLOR_TITLE);
+                    
+                    int foundationX = 35;
+                    
+                    char suit = 'S';
+                    std::wstring suitSymbol = L"♠";
+                    
+                    ConsoleUtils::drawBox(foundationX, 8, 6, 4, COLOR_BORDER);
+                    ConsoleUtils::writeStringWide(foundationX + 2, 9, suitSymbol, COLOR_CARD_BLACK);
+                    
+                    int topCard = 1 + (animationFrame / 20) % 5;
+                    for (int i = 1; i <= topCard; i++) {
+                        drawFullCard(foundationX, 8 - (i-1), suit, i, true);
+                    }
+                    
+                    drawFullCard(20, 12, suit, topCard + 1, true, true);
+                    
+                    drawAnimatedArrow(27, 12, true, 7);
+                    
+                    ConsoleUtils::writeString(15, 17, "● You can only place cards on foundations in ascending order (A,2,3...).", COLOR_INFO);
+                    ConsoleUtils::writeString(15, 18, "● Each foundation accepts only one suit (♥, ♦, ♣, or ♠).", COLOR_INFO);
+                    break;
+                }
+                case 5: {
+                    ConsoleUtils::writeString(15, 6, "MOVING CARDS: Select source, then destination.", COLOR_TITLE);
+                    
+                    int movePhase = animationFrame % 40;
+                    
+                    int srcX = 20;
+                    drawFullCard(srcX, 8, 'H', 6, true, movePhase < 10);
+                    drawFullCard(srcX, 12, 'S', 5, true, movePhase < 10 && movePhase >= 5);
+                    drawFullCard(srcX, 16, 'H', 4, true, movePhase < 10 && movePhase >= 5);
+                    
+                    int dstX = 45;
+                    drawFullCard(dstX, 8, 'C', 7, true, movePhase >= 10 && movePhase < 20);
+                    
+                    if (movePhase >= 20 && movePhase < 30) {
+                        int progress = movePhase - 20;
+                        int cardX = srcX + (dstX - srcX) * progress / 10;
+                        
+                        drawFullCard(cardX, 12, 'S', 5, true);
+                        drawFullCard(cardX, 16, 'H', 4, true);
+                    } else if (movePhase >= 30) {
+                        drawFullCard(dstX, 12, 'S', 5, true);
+                        drawFullCard(dstX, 16, 'H', 4, true);
+                    }
+                    
+                    ConsoleUtils::writeString(15, 20, "1. Select a card or sequence with Enter/Space (it will highlight).", COLOR_INFO);
+                    ConsoleUtils::writeString(15, 21, "2. Then select a valid destination and press Enter/Space again.", COLOR_INFO);
                     break;
                 }
                 case 6: {
-
+                    ConsoleUtils::writeString(20, 6, "SPECIAL MOVES & RULES", COLOR_TITLE);
+                    
+                    int tableauX = 30;
+                    ConsoleUtils::drawBox(tableauX, 8, 6, 4, COLOR_BORDER);
+                    ConsoleUtils::writeString(tableauX + 2, 9, "[ ]", COLOR_CARD_EMPTY);
+                    ConsoleUtils::writeString(tableauX-5, 13, "EMPTY SPOT", COLOR_LABEL);
+                
+                    drawFullCard(tableauX - 15, 8, 'S', 13, true);
+                    
+                    drawAnimatedArrow(tableauX - 8, 9, true, 7);
+                    
+                    ConsoleUtils::writeString(20, 16, "● Only Kings can be placed on empty tableau spots.", COLOR_INFO);
+                    ConsoleUtils::writeString(20, 17, "● You can move sequences of cards as a single unit.", COLOR_INFO);
+                    ConsoleUtils::writeString(20, 18, "● Creating empty spots is a key strategy for organizing cards.", COLOR_INFO);
+                    break;
+                }
+                case 7: {
+                    ConsoleUtils::writeString(20, 6, "POWER-UPS: Special abilities to help when stuck.", COLOR_TITLE);
+                    
                     int x = 20, y = 8;
                     std::vector<std::pair<std::string, std::string>> powerups = {
-                        {"[U]ndo", "Take back a move"},
-                        {"[S]huffle", "Shuffle stock & waste"},
-                        {"Re[V]eal", "Flip hidden cards"},
-                        {"[J]oker", "Create a wild card"},
-                        {"[H]int", "Show possible move"}
+                        {"[U]ndo", "Take back your last move."},
+                        {"[S]huffle", "Reshuffle stock & waste piles."},
+                        {"Re[V]eal", "Flip over hidden cards on tableau."},
+                        {"[J]oker", "Create a wild card that matches any card."},
+                        {"[H]int", "Highlights a possible move you can make."}
                     };
                     
-                    for (const auto& powerup : powerups) {
-                        ConsoleUtils::writeString(x, y, powerup.first, COLOR_LABEL);
-                        ConsoleUtils::writeString(x + 10, y, powerup.second, COLOR_DEFAULT);
-                        y += 2;
+                    int highlightIndex = (animationFrame / 30) % powerups.size();
+                    
+                    for (size_t i = 0; i < powerups.size(); i++) {
+                        WORD color = (i == highlightIndex) ? COLOR_SUCCESS : COLOR_LABEL;
+                        ConsoleUtils::writeString(x, y + i*2, powerups[i].first, color);
+                        ConsoleUtils::writeString(x + 10, y + i*2, powerups[i].second, (i == highlightIndex) ? COLOR_SUCCESS : COLOR_DEFAULT);
                     }
+                    
+                    ConsoleUtils::writeString(20, 18, "Each power-up has limited uses per game. Use them wisely!", COLOR_INFO);
+                    break;
+                }
+                case 8: {
+                    ConsoleUtils::writeString(20, 6, "WINNING STRATEGIES", COLOR_TITLE);
+                    
+                    int x = 15;
+                    
+                    drawFullCard(x, 8, 'S', 10, true);
+                    drawFullCard(x, 12, 'H', 9, true);
+                    drawFullCard(x, 16, 'X', 0, false);
+                    
+                    ConsoleUtils::writeString(x + 10, 10, "Focus on revealing face-down cards first.", COLOR_SUCCESS);
+                    ConsoleUtils::writeString(x + 10, 14, "This card is still unknown - try to reveal it.", COLOR_INFO);
+                    
+                    x = 15;
+                    int strategyY = 20;
+                    ConsoleUtils::drawBox(x, strategyY, 6, 4, COLOR_BORDER);
+                    ConsoleUtils::writeString(x + 2, strategyY + 1, "[ ]", COLOR_CARD_EMPTY);
+                    
+                    drawFullCard(x + 25, strategyY, 'D', 13, true);
+                    ConsoleUtils::writeString(x + 10, strategyY + 2, "Empty spots are valuable! Use for Kings.", COLOR_SUCCESS);
+                    
+                    break;
+                }
+                case 9: {
+                    ConsoleUtils::writeString(20, 6, "SCORING & POINTS", COLOR_TITLE);
+                    
+                    int y = 8;
+                    ConsoleUtils::writeString(15, y, "Action", COLOR_LABEL);
+                    ConsoleUtils::writeString(40, y, "Points", COLOR_LABEL);
+                    y += 2;
+                    
+                    std::vector<std::pair<std::string, int>> scoreActions = {
+                        {"Move card to Foundation.", 10},
+                        {"Flip tableau card face up.", 5},
+                        {"Move King to empty spot.", 5},
+                        {"Using Shuffle power-up.", -20},
+                        {"Game Completion Bonus.", 100}
+                    };
+                    
+                    int highlight = (animationFrame / 20) % scoreActions.size();
+                    
+                    for (size_t i = 0; i < scoreActions.size(); i++) {
+                        WORD color = (i == highlight) ? COLOR_SUCCESS : COLOR_DEFAULT;
+                        ConsoleUtils::writeString(15, y + i*2, scoreActions[i].first, color);
+                        ConsoleUtils::writeString(40, y + i*2, std::to_string(scoreActions[i].second), color);
+                    }
+                    
+                    y += scoreActions.size() * 2 + 1;
+                    ConsoleUtils::writeString(15, y, "Try to win with highest possible score!", COLOR_INFO);
+                    break;
+                }
+                case 10: {
+                    ConsoleUtils::drawBox(15, 8, 50, 10, COLOR_BORDER);
+                    
+                    ConsoleUtils::writeStringWide(25, 10, L"♠ ♥ You're Ready to Play! ♦ ♣", COLOR_SUCCESS);
+                    ConsoleUtils::writeStringWide(20, 12, L"   Press ESC to return to the main menu", COLOR_DEFAULT);
+                    ConsoleUtils::writeStringWide(20, 14, L"and start your first Solitaire game.", COLOR_DEFAULT);
+                    
+                    drawFullCard(17, 9, 'S', 1, true);
+                    drawFullCard(60, 9, 'H', 1, true);
+                    drawFullCard(17, 16, 'C', 1, true);
+                    drawFullCard(60, 16, 'D', 1, true);
                     break;
                 }
             }
 
             ConsoleUtils::writeStringWide(10, 20, lessons[page], COLOR_DEFAULT);
 
-            std::string navHelp = "Use ← → arrow keys to navigate, ESC to exit tutorial";
+            std::string navHelp = "Use ← → arrow keys to navigate, ESC to exit tutorial.";
             ConsoleUtils::writeString((CONSOLE_WIDTH - navHelp.length()) / 2, CONSOLE_HEIGHT - 2, navHelp, COLOR_INFO);
             
             ConsoleUtils::renderBuffer();
         };
         
         renderTutorialPage(currentLesson);
+        auto lastFrameTime = std::chrono::steady_clock::now();
         
         while (tutorialActive) {
-            int key = ConsoleUtils::getKeyPress();
+            auto currentTime = std::chrono::steady_clock::now();
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastFrameTime).count();
             
-            switch (key) {
-                case KEY_LEFT:
-                    if (currentLesson > 0) {
-                        currentLesson--;
-                        renderTutorialPage(currentLesson);
-                    }
-                    break;
-                case KEY_RIGHT:
-                    if (currentLesson < static_cast<int>(lessons.size()) - 1) {
-                        currentLesson++;
-                        renderTutorialPage(currentLesson);
-                    }
-                    break;
-                case KEY_ESC:
-                    tutorialActive = false;
-                    break;
+            if (elapsed > 100) {
+                animationFrame++;
+                renderTutorialPage(currentLesson);
+                lastFrameTime = currentTime;
             }
+            
+            if (_kbhit()) {
+                int key = ConsoleUtils::getKeyPress();
+                
+                switch (key) {
+                    case KEY_LEFT:
+                        if (currentLesson > 0) {
+                            currentLesson--;
+                            renderTutorialPage(currentLesson);
+                        }
+                        break;
+                    case KEY_RIGHT:
+                        if (currentLesson < static_cast<int>(lessons.size()) - 1) {
+                            currentLesson++;
+                            renderTutorialPage(currentLesson);
+                        }
+                        break;
+                    case KEY_ESC:
+                        tutorialActive = false;
+                        break;
+                    case KEY_ENTER:
+                        if (currentLesson == 2 || currentLesson == 5) {
+                            for (int i = 0; i < 40; i++) {
+                                animationFrame++;
+                                renderTutorialPage(currentLesson);
+                                ConsoleUtils::sleep(50);
+                            }
+                        }
+                        break;
+                    case 'P': case 'p': case 'U': case 'u': case 'S': case 's':
+                    case 'V': case 'v': case 'J': case 'j': case 'H': case 'h':
+                        if (currentLesson == 7) {
+                            char powerup = toupper(key);
+                            std::map<char, std::pair<std::string, std::wstring>> powerupDetails = {
+                                {'U', {"UNDO", L"Takes back your last move. Useful when you make a mistake."}},
+                                {'S', {"SHUFFLE", L"Reshuffles stock and waste piles. Helpful when you run out of moves."}},
+                                {'V', {"REVEAL", L"Reveals face-down cards in tableau. Great for planning your next moves."}},
+                                {'J', {"JOKER", L"Creates a wild card that can substitute for any card you need."}},
+                                {'H', {"HINT", L"Highlights a valid move you can make when you're stuck."}}
+                            };
+                            
+                            if (powerupDetails.find(powerup) != powerupDetails.end()) {
+                                ConsoleUtils::clearBuffer();
+                                ConsoleUtils::drawBox(10, 8, 60, 10, COLOR_BORDER);
+                                ConsoleUtils::writeString(12, 9, powerupDetails[powerup].first + " POWER-UP", COLOR_TITLE);
+                                ConsoleUtils::writeStringWide(12, 11, powerupDetails[powerup].second, COLOR_DEFAULT);
+                                ConsoleUtils::writeString(12, 16, "Press any key to return to power-ups page", COLOR_INFO);
+                                ConsoleUtils::renderBuffer();
+                                
+                                ConsoleUtils::getKeyPress();
+                                renderTutorialPage(currentLesson);
+                            }
+                        }
+                        break;
+                }
+            }
+            
+            ConsoleUtils::sleep(10);
         }
     }
 
     void showOptions() {
          bool optionsOpen = true;
-         while (optionsOpen) {
-             Player& playerRef = game.getPlayer(); 
-
+         Player& playerRef = game.getPlayer();
+         
+         while (optionsOpen && running) {
+             ConsoleUtils::clearBuffer();
+             ConsoleUtils::drawBox(0, 0, CONSOLE_WIDTH, CONSOLE_HEIGHT, COLOR_BORDER);
+             
+             std::string title = " SETTINGS ";
+             ConsoleUtils::writeString((CONSOLE_WIDTH - title.length()) / 2, 1, title, COLOR_TITLE | NEO_BACKGROUND_BLUE);
+             
              std::vector<std::string> options = {
-                "Player Name: " + playerRef.getName(),
-                std::string("Colorblind Mode [") + (playerRef.getColorblindMode() ? "ON" : "OFF") + "]",
-                std::string("Easy Mode       [") + (playerRef.getEasyMode() ? "ON" : "OFF") + "]",
-                std::string("Powerups        [") + (playerRef.getPowerupsEnabled() ? "ON" : "OFF") + "]",
-                std::string("Animations      [") + (ENABLE_ANIMATION ? "ON" : "OFF") + "]",
-                "Save Settings",
-                "Back"
+                 "Easy Mode: " + std::string(playerRef.getEasyMode() ? "ON" : "OFF"),
+                 "Powerups: " + std::string(playerRef.getPowerupsEnabled() ? "ON" : "OFF"),
+                 "Change Player Name",
+                 "Reset High Score",
+                 "Save Settings",
+                 "Back"
              };
-
-             ui.drawBoard();
-
-             int choice = ui.runMenu("Options", options, -1, -1);
-
-
+             
+             int choice = ui.runMenu("Settings", options, -1, -1);
+             
              switch (choice) {
-                case 0: { 
-                    std::string prompt = "Enter new name (max 20 chars): ";
-
-                     int inputX = (CONSOLE_WIDTH - prompt.length() - 20) / 2;
-                     int inputY = CONSOLE_HEIGHT / 2 + options.size() + 2; 
-
-                     ConsoleUtils::fillRectangle(1, inputY, CONSOLE_WIDTH - 2, 1, L' ', COLOR_DEFAULT); 
-                     ConsoleUtils::writeString(inputX, inputY, prompt, COLOR_LABEL);
-                     ConsoleUtils::renderBuffer();
-
-                     std::string newName = ConsoleUtils::getTextInput(inputX + prompt.length(), inputY, 20, playerRef.getName());
-
-                     if (!newName.empty()) { 
-                         playerRef.setName(newName);
-                     }
-
-                     ConsoleUtils::fillRectangle(1, inputY, CONSOLE_WIDTH - 2, 1, L' ', COLOR_DEFAULT);
-
-
-                     break;
-                 }
+                case 0: 
+                    playerRef.toggleEasyMode();
+                    ui.setStatusMessage(L"Easy mode " + std::wstring(playerRef.getEasyMode() ? L"enabled." : L"disabled."), 1500);
+                    ConsoleUtils::playSound(1000, 80);
+                    break;
                 case 1: 
-                    playerRef.toggleColorblindMode();
-                    ConsoleUtils::playSound(700, 50);
+                    playerRef.togglePowerupsEnabled();
+                    ui.setStatusMessage(L"Powerups " + std::wstring(playerRef.getPowerupsEnabled() ? L"enabled." : L"disabled."), 1500);
+                    ConsoleUtils::playSound(1000, 80);
                     break;
                 case 2: 
-                     playerRef.toggleEasyMode(); 
-                     ConsoleUtils::playSound(700, 50);
-
-
-                     ui.setStatusMessage(std::wstring(L"Easy Mode ") + (playerRef.getEasyMode() ? L"ON" : L"OFF") + L". Powerups reset.", 1500);
-                     break;
-                case 3:
-                     playerRef.togglePowerupsEnabled();
-                     ConsoleUtils::playSound(700, 50);
-                     ui.setStatusMessage(std::wstring(L"Powerups ") + (playerRef.getPowerupsEnabled() ? L"ON" : L"OFF"), 1500);
-                     break;
-                case 4:
-
-
-                     ui.setStatusMessage(L"Animation settings aren't persistent yet.", 1500);
-                     break;
-                case 5: 
+                    {
+                        std::string newName = ConsoleUtils::getTextInput(CONSOLE_WIDTH / 2 - 10, CONSOLE_HEIGHT / 2, 20, playerRef.getName()); 
+                        if (!newName.empty()) {
+                            playerRef.setName(newName);
+                            ui.setStatusMessage(L"Name changed to " + std::wstring(newName.begin(), newName.end()), 1500);
+                            ConsoleUtils::playSound(1000, 80);
+                        }
+                    }
+                    break;
+                case 3: 
+                    {
+                        std::vector<std::string> confirmOptions = {"Yes, reset score.", "No, keep score."};
+                        int confirm = ui.runMenu("Reset High Score?", confirmOptions, -1, -1);
+                        if (confirm == 0) {
+                            playerRef.resetHighScore();
+                            ui.setStatusMessage(L"High score reset to 0.", 1500);
+                            ConsoleUtils::playSound(200, 150);
+                        }
+                    }
+                    break;
+                case 4: 
                     playerRef.saveToFile();
                     ui.setStatusMessage(L"Settings saved.", 1500); 
                     ConsoleUtils::playSound(1000, 80);
                     break;
-                case 6: 
+                case 5: 
                 case -1: 
                     optionsOpen = false; 
                     break;
@@ -3254,55 +3532,6 @@ private:
 
          ui.drawBoard();
          ConsoleUtils::renderBuffer();
-    }
-
-    void showHelpScreen() {
-        ConsoleUtils::clearBuffer();
-        ConsoleUtils::drawBox(0, 0, CONSOLE_WIDTH, CONSOLE_HEIGHT, COLOR_BORDER); 
-        ConsoleUtils::writeString((CONSOLE_WIDTH - 13) / 2, 1, "HOW TO PLAY", COLOR_TITLE);
-
-        int currentY = 4;
-        int leftColX = 5;
-        int rightColX = CONSOLE_WIDTH / 2 + 3;
-
-        ConsoleUtils::writeString(leftColX, currentY++, "Objective:", COLOR_LABEL);
-        ConsoleUtils::writeString(leftColX, currentY++, "- Move all 52 cards to the 4 Foundation piles (top right).", COLOR_DEFAULT);
-        ConsoleUtils::writeString(leftColX, currentY++, "- Foundations build UP by suit (A, 2... K).", COLOR_DEFAULT);
-        currentY++;
-        ConsoleUtils::writeString(leftColX, currentY++, "Tableau (Middle):", COLOR_LABEL);
-        ConsoleUtils::writeString(leftColX, currentY++, "- Build DOWN by alternating colors (Red on Black, Black on Red).", COLOR_DEFAULT);
-        ConsoleUtils::writeString(leftColX, currentY++, "- Move single cards or valid sequences between piles.", COLOR_DEFAULT);
-        ConsoleUtils::writeString(leftColX, currentY++, "- Empty piles accept only Kings (or sequences starting with K/Joker).", COLOR_DEFAULT);
-        currentY++;
-        ConsoleUtils::writeString(leftColX, currentY++, "Stock & Waste (Top Left):", COLOR_LABEL);
-        ConsoleUtils::writeString(leftColX, currentY++, "- Click Stock or press [D] to deal 1 card to Waste.", COLOR_DEFAULT);
-        ConsoleUtils::writeString(leftColX, currentY++, "- Click empty Stock [R] to recycle Waste back to Stock (penalty).", COLOR_DEFAULT);
-        ConsoleUtils::writeString(leftColX, currentY++, "- Move top Waste card to Foundations or Tableau.", COLOR_DEFAULT);
-
-        currentY = 4;
-        ConsoleUtils::writeString(rightColX, currentY++, "Controls:", COLOR_LABEL);
-        ConsoleUtils::writeString(rightColX, currentY++, "- Arrow Keys : Navigate Selection (Up/Down)", COLOR_DEFAULT);
-        ConsoleUtils::writeString(rightColX, currentY++, "- Arrow Keys       : Navigate Selection (Left/Right)", COLOR_DEFAULT);
-        ConsoleUtils::writeString(rightColX, currentY++, "- Enter / Spacebar : Select Source / Destination", COLOR_DEFAULT);
-        ConsoleUtils::writeString(rightColX, currentY++, "  (Auto-moves to Foundation if possible on first click)", COLOR_DEFAULT);
-        ConsoleUtils::writeString(rightColX, currentY++, "- [D]: Draw from Stock / Recycle Waste", COLOR_DEFAULT);
-        ConsoleUtils::writeString(rightColX, currentY++, "- [U]: Undo Last Move", COLOR_DEFAULT);
-        currentY++;
-        ConsoleUtils::writeString(rightColX, currentY++, "Powerups:", COLOR_LABEL);
-        ConsoleUtils::writeString(rightColX, currentY++, "- [S]: Shuffle Stock & Waste", COLOR_DEFAULT);
-        ConsoleUtils::writeString(rightColX, currentY++, "- [V]: Reveal 1 face-down card per pile", COLOR_DEFAULT);
-        ConsoleUtils::writeString(rightColX, currentY++, "- [J]: Place Joker on selected Tableau pile", COLOR_DEFAULT);
-        ConsoleUtils::writeString(rightColX, currentY++, "- [H]: Show a Hint for a possible move", COLOR_DEFAULT);
-        currentY++;
-        ConsoleUtils::writeString(rightColX, currentY++, "Other:", COLOR_LABEL);
-        ConsoleUtils::writeString(rightColX, currentY++, "- [O]: Options Menu", COLOR_DEFAULT);
-        ConsoleUtils::writeString(rightColX, currentY++, "- [Q]: Quit Game to Main Menu", COLOR_DEFAULT);
-        ConsoleUtils::writeString(rightColX, currentY++, "- [Esc]: Cancel Selection / Back (Menus)", COLOR_DEFAULT);
-
-        ConsoleUtils::writeString((CONSOLE_WIDTH - 21) / 2, CONSOLE_HEIGHT - 3, "Press any key to return", COLOR_INFO);
-
-        ConsoleUtils::renderBuffer();
-        ConsoleUtils::getKeyPress(); 
     }
 
     void startGame() {
@@ -3331,8 +3560,8 @@ private:
                      ConsoleUtils::writeString((CONSOLE_WIDTH - messages[i].length()) / 2, centerY + i, messages[i], COLOR_DEFAULT);
                  }
                  
-                 std::vector<std::string> options = {"Yes, show tutorial", "No, start playing"};
-                 int choice = ui.runMenu("", options, -1, centerY + 5);
+                 std::vector<std::string> options = {"Yes, show tutorial.", "No, start playing."};
+                 int choice = ui.runMenu("Welcome", options, -1, centerY + 5);
                  
                  if (choice == 0) {
 
@@ -3360,18 +3589,24 @@ public:
 
     void run() {
         displaySplash(); 
+
         showMainMenu();
 
         while (running) {
             if (game.isGameOver() || game.isGameWon()) {
+
                 processInput(); 
 
             } else {
+
                  processInput();
             }
 
             ConsoleUtils::sleep(16); 
         }
+
+        game.getPlayer().updateHighScore();
+        game.getPlayer().saveToFile();
 
         ConsoleUtils::cleanupConsole();
         std::cout << "\nThanks for playing NeoSolitaire!\n";

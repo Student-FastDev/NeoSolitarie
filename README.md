@@ -131,7 +131,6 @@ The goal of Solitaire is to move all cards to the four foundation piles, organiz
    - Persistent high score.
 
 4. **Accessibility Features**:
-   - Colorblind mode for better card visibility.
    - Custom difficulty settings.
 
 5. **Game Aids**:
@@ -264,7 +263,6 @@ Celem Pasjansa jest przeniesienie wszystkich kart na cztery stosy fundamentów, 
    - Trwały najlepszy wynik.
 
 4. **Funkcje dostępności**:
-   - Tryb dla daltonistów dla lepszej widoczności kart.
    - Niestandardowe ustawienia trudności.
 
 5. **Pomoce w grze**:

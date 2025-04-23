@@ -9,14 +9,14 @@
 #include <fstream>       // Do operacji na plikach (zapis/odczyt danych gracza).
 #include <iomanip>       // Do manipulacji strumieniem wyjściowym (np. std::setw, std::setfill).
 #include <iostream>      // Do standardowego wejścia/wyjścia (nieużywane bezpośrednio do renderowania konsoli).
-#include <map>           // Do potencjalnego użycia struktur danych opartych na mapach (obecnie nieużywane w tym fragmencie).
+#include <map>           // Do potencjalnego użycia struktur danych opartych na mapach.
 #include <random>        // Do generowania liczb losowych (tasowanie kart).
 #include <sstream>       // Do operacji na strumieniach stringów (formatowanie czasu).
 #include <stdexcept>     // Do obsługi standardowych wyjątków (np. std::runtime_error).
 #include <string>        // Do obsługi obiektów std::string.
 #include <thread>        // Do wstrzymywania wykonania wątku (np. std::this_thread::sleep_for).
 #include <vector>        // Do używania dynamicznych tablic std::vector.
-#include <optional>      // Do reprezentowania wartości, które mogą być obecne lub nie (obecnie nieużywane w tym fragmencie).
+#include <optional>      // Do reprezentowania wartości, które mogą być obecne lub nie.
 
 // Stała definiująca szerokość konsoli w znakach.
 const int CONSOLE_WIDTH = 120;

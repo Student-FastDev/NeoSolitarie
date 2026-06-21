@@ -43,7 +43,7 @@ To run this program, you need a C++ development environment. The game is designe
 - A Windows operating system.
 - A terminal or command-line interface that supports UTF-8 characters.
 
-[You can also download already compiled version to skip next step.](https://github.com/Student-FastDev/NeoSolitarie/releases)
+[You can also download already compiled version to skip next step](https://github.com/Student-FastDev/NeoSolitarie/releases).
 
 ### Compilation Instructions
 
@@ -177,7 +177,7 @@ Aby uruchomić ten program, potrzebujesz środowiska programistycznego C++. Gra 
 - Systemu operacyjnego Windows.
 - Terminala lub interfejsu wiersza poleceń obsługującego znaki UTF-8.
 
-[Możesz także pobrać skompilowany plik, aby pominąć następny krok.](https://github.com/Student-FastDev/NeoSolitarie/releases)
+[Możesz także pobrać skompilowany plik, aby pominąć następny krok](https://github.com/Student-FastDev/NeoSolitarie/releases).
 
 ### Instrukcje kompilacji
 

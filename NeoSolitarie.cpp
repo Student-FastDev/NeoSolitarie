@@ -1,3 +1,24 @@
+#define _WIN32_WINNT 0x0500 
+#include <conio.h>       
+#include <windows.h>     
+
+#include <algorithm>     
+#include <chrono>        
+#include <cmath>         
+#include <ctime>         
+#include <fstream>       
+#include <iomanip>       
+#include <iostream>      
+#include <map>           
+#include <random>        
+#include <sstream>       
+#include <stdexcept>     
+#include <string>        
+#include <thread>        
+#include <vector>        
+#include <optional>      
+
+const int CONSOLE_WIDTH = 120;
 const int CONSOLE_HEIGHT = 45;
 
 const WORD NEO_FOREGROUND_BLACK = 0;

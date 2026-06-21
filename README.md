@@ -1,8 +1,8 @@
 ![NeoSolitaire Icon](https://i.imgur.com/1mSIKP4.png)
 
 This README was written in two languages:
-- **English** [NeoSolitaire](#neosolitaire-english)
--  **Polski** [NeoPasjans](#neopasjans-polski)
+- **English** [NeoSolitaire](#neosolitaire-english).
+-  **Polski** [NeoPasjans](#neopasjans-polski).
 
 ---
 ![NeoSolitaire Menu](https://i.imgur.com/zZusAt9.png)
@@ -12,10 +12,10 @@ This README was written in two languages:
 # NeoSolitaire (English)
 
 ## Table of Contents
-1. [Project Overview](#project-overview)
-2. [Setup and Compilation](#setup-and-compilation)
-3. [Game Instructions](#game-instructions)
-4. [Key Features](#key-features)
+1. [Project Overview](#project-overview).
+2. [Setup and Compilation](#setup-and-compilation).
+3. [Game Instructions](#game-instructions).
+4. [Key Features](#key-features).
 
 ---
 <img src="https://i.imgur.com/ynuNJ0i.png" width="50">
@@ -146,10 +146,10 @@ The goal of Solitaire is to move all cards to the four foundation piles, organiz
 # NeoPasjans (Polski)
 
 ## Spis treści
-1. [Opis projektu](#opis-projektu)
-2. [Konfiguracja i kompilacja](#konfiguracja-i-kompilacja)
-3. [Instrukcje do gry](#instrukcje-do-gry)
-4. [Kluczowe funkcje](#kluczowe-funkcje)
+1. [Opis projektu](#opis-projektu).
+2. [Konfiguracja i kompilacja](#konfiguracja-i-kompilacja).
+3. [Instrukcje do gry](#instrukcje-do-gry).
+4. [Kluczowe funkcje](#kluczowe-funkcje).
 
 ---
 <img src="https://i.imgur.com/ynuNJ0i.png" width="50">
